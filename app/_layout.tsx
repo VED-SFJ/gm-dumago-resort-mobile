@@ -1,36 +1,15 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
+  const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
   });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
 
   useEffect(() => {
     if (loaded) {
@@ -39,21 +18,32 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return null; 
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <Stack>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal', headerShown: false }} />
+      
+      
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="menu" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="addPoints" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="usePoints" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="activities" options={{ presentation: 'modal', headerShown: false }} />
+
+      <Stack.Screen name="adminLogin" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="adminScanner" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+
+      <Stack.Screen name="cart" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="digitalKey" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="chat" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="map" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="settings" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="productDetail" options={{ headerShown: false, presentation: 'modal' }} />
+      
+      <Stack.Screen name="+not-found" />
+    </Stack>
   );
 }
