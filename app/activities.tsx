@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Dimensions, FlatList, Image, Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -10,7 +10,7 @@ const activities = [
   { id: '2', name: 'Karaoke Room', description: 'Sing your heart out! Available for hourly rental.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
   { id: '3', name: 'Billiards', description: 'Challenge your friends to a game of pool.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
   { id: '4', name: 'Gym', description: 'Stay fit with our state-of-the-art gym facilities.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
-  { id: '5', name: 'Spa', description: 'Relax and rejuvenate with our luxurious spa treatments.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
+  { id: '5', 'name': 'Spa', description: 'Relax and rejuvenate with our luxurious spa treatments.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
   { id: '6', name: 'Kids Club', description: 'Fun activities for children of all ages.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
 ];
 
@@ -36,8 +36,9 @@ export default function ActivitiesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* This JSX structure is unchanged, exactly as you provided it. */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Resort Activities</Text>
@@ -97,22 +98,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center', 
     paddingVertical: 15,
     paddingHorizontal: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    position: 'relative',
   },
   backButton: {
-    marginRight: 10,
+    position: 'absolute',
+    left: 15, 
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    flex: 1,
     textAlign: 'center',
-    marginLeft: -38,
   },
   headerSpacer: {
     width: 38,

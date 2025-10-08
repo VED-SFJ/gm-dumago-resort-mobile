@@ -7,52 +7,51 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image, 
+  Image,
+  StatusBar, 
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function DigitalKeyScreen() {
   const router = useRouter();
-  const reservationId = 'RES-12345678'; 
-  const guestName = 'Jameel Tutungan'; 
-  const numberOfGuests = 4; 
+  const reservationId = 'RES-12345678';
+  const guestName = 'Jameel Tutungan';
+  const numberOfGuests = 4;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      <StatusBar barStyle="light-content" />
+
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={26} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Digital Key</Text> 
-        <View style={{ width: 26 }} /> 
+        <Text style={styles.headerTitle}>My Digital Key</Text>
+        <View style={styles.iconButton} />
       </View>
 
       <View style={styles.profileSection}>
         <Image
-          source={require('../assets/images//profile.jpg')} 
+          source={require('../assets/images//profile.jpg')}
           style={styles.profilePicture}
         />
         <Text style={styles.profileName}>{guestName}</Text>
+        <Text style={styles.profileHandle}>Reservation: {reservationId}</Text>
       </View>
 
       <Text style={styles.instructions}>
-        Present this <Text style={styles.bold}>QR code</Text> at the gate for scanning.
+        Present this QR code at the gate for scanning.
       </Text>
 
-      <View style={styles.contentBox}>
-        <View style={styles.qrContainer}>
-          <QRCode
-            value={reservationId}
-            size={200}
-            color="black"
-            backgroundColor="white"
-          />
-        </View>
-
-        <Text style={styles.resIdText}>Reservation ID: {reservationId}</Text>
-        <Text style={styles.guestText}>Guests: {guestName} + {numberOfGuests}</Text>
+      <View style={styles.qrCard}>
+        <QRCode
+          value={JSON.stringify({ reservationId, guestName, numberOfGuests })} 
+          size={180} 
+          color="black"
+          backgroundColor="white"
+        />
       </View>
+
     </SafeAreaView>
   );
 }
@@ -60,80 +59,67 @@ export default function DigitalKeyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#324A59', 
-    paddingHorizontal: 20,
-    paddingTop: 40,
+    backgroundColor: '#3A506B', 
+    alignItems: 'center',
   },
   header: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 30,
-    marginTop: -10,
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    marginBottom: 20,
   },
-  backButton: {
-    padding: 5,
+  iconButton: {
+    padding: 10,
+    width: 44, 
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
   },
   profilePicture: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
-    borderColor: '#fff', 
-    borderWidth: 2,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+    color: '#FFFFFF',
+  },
+  profileHandle: {
+    fontSize: 16,
+    color: '#D0D6DC', 
+    marginTop: 4,
   },
   instructions: {
     fontSize: 16,
     color: '#D0D6DC',
     textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 24, 
+    marginBottom: 30,
+    paddingHorizontal: 40,
   },
-  bold: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  contentBox: {
-    backgroundColor: '#3F596B', 
-    borderRadius: 20,
-    padding: 20, 
+  qrCard: {
+    backgroundColor: '#4E6A86', 
+    borderRadius: 30, 
+    padding: 30,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 10,
-    marginHorizontal: 10,
-  },
-  qrContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 25, 
-  },
-  resIdText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  guestText: {
-    fontSize: 16,
-    color: '#D0D6DC',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 15,
   },
 });
