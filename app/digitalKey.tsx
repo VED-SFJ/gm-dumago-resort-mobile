@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,15 +8,128 @@ import {
   TouchableOpacity,
   View,
   Image,
-  StatusBar, 
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
+/**
+ * A component that handles fetching a styled QR code from an external API
+ * and falls back to a locally generated one if the API call fails.
+ */
+const QRCodeDisplay = ({ qrCodeValue, size = 180 }) => {
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [useFallback, setUseFallback] = useState(false);
+
+  useEffect(() => {
+    const fetchPrimaryQRCode = async () => {
+      try {
+        console.log("Attempting to fetch styled PNG QR from primary API...");
+        const response = await fetch(
+          'https://api.qrcode-monkey.com/qr/custom',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'text/plain;charset=UTF-8',
+            },
+            body: JSON.stringify({
+              data: qrCodeValue,
+              config: {
+                body: 'circular',
+                eye: 'frame13',
+                eyeBall: 'ball15',
+                bodyColor: '#0891b2',
+                bgColor: '#FFFFFF',
+                eye1Color: '#000000',
+                eye2Color: '#000000',
+                eye3Color: '#000000',
+                eyeBall1Color: '#000000',
+                eyeBall2Color: '#000000',
+                eyeBall3Color: '#000000',
+                gradientColor1: '#085567',
+                gradientColor2: '#10887A',
+                gradientType: 'linear',
+                gradientOnEyes: true,
+                logo: '#share-circle',
+                logoMode: 'default',
+              },
+              size: 600,
+              download: 'imageUrl',
+              file: 'png',
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Primary QR service failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        const validUrl = `https:${result.imageUrl}`;
+        console.log("Successfully fetched QR code URL:", validUrl);
+        setQrCodeUrl(validUrl);
+
+      } catch (err: any) {
+        console.warn('Primary QR Code generation failed, switching to local fallback:', err.message);
+        setError('Could not generate styled QR pass. Using a standard one.');
+        setUseFallback(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const generateQRCode = async () => {
+      if (!qrCodeValue || qrCodeValue.includes('NO-ID')) {
+        setError("Invalid reservation data provided.");
+        setIsLoading(false);
+        setUseFallback(true);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+      await fetchPrimaryQRCode();
+    };
+
+    generateQRCode();
+  }, [qrCodeValue]);
+
+  // --- Rendering Logic ---
+
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#FFFFFF" style={{ width: size, height: size }} />;
+  }
+
+  // Use fallback if there was an error OR the fallback state was explicitly set
+  if (useFallback) {
+    return (
+        <View>
+            <QRCode value={qrCodeValue} size={size} color="black" backgroundColor="white" />
+            {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+    );
+  }
+
+  // If we have a URL and are not in fallback mode, display the styled image
+  if (qrCodeUrl) {
+    return <Image source={{ uri: qrCodeUrl }} style={{ width: size, height: size }} />;
+  }
+
+  // A final catch-all, though it's unlikely to be reached
+  return <QRCode value={qrCodeValue} size={size} color="black" backgroundColor="white" />;
+};
+
+
 export default function DigitalKeyScreen() {
   const router = useRouter();
-  const reservationId = 'RES-12345678';
-  const guestName = 'Jameel Tutungan';
-  const numberOfGuests = 4;
+  const params = useLocalSearchParams();
+
+  const reservationId = (params.reservationId as string) || 'NO-ID';
+  const username = (params.username as string) || 'Guest';
+
+  const qrCodeValue = `${username}_${reservationId}`;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -32,10 +145,10 @@ export default function DigitalKeyScreen() {
 
       <View style={styles.profileSection}>
         <Image
-          source={require('../assets/images//profile.jpg')}
+          source={require('../assets/images/profile.jpg')}
           style={styles.profilePicture}
         />
-        <Text style={styles.profileName}>{guestName}</Text>
+        <Text style={styles.profileName}>{username}</Text>
         <Text style={styles.profileHandle}>Reservation: {reservationId}</Text>
       </View>
 
@@ -44,12 +157,7 @@ export default function DigitalKeyScreen() {
       </Text>
 
       <View style={styles.qrCard}>
-        <QRCode
-          value={JSON.stringify({ reservationId, guestName, numberOfGuests })} 
-          size={180} 
-          color="black"
-          backgroundColor="white"
-        />
+        <QRCodeDisplay qrCodeValue={qrCodeValue} size={180} />
       </View>
 
     </SafeAreaView>
@@ -59,7 +167,7 @@ export default function DigitalKeyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#3A506B', 
+    backgroundColor: '#3A506B',
     alignItems: 'center',
   },
   header: {
@@ -73,7 +181,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 10,
-    width: 44, 
+    width: 44,
   },
   headerTitle: {
     fontSize: 20,
@@ -97,7 +205,7 @@ const styles = StyleSheet.create({
   },
   profileHandle: {
     fontSize: 16,
-    color: '#D0D6DC', 
+    color: '#D0D6DC',
     marginTop: 4,
   },
   instructions: {
@@ -108,8 +216,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   qrCard: {
-    backgroundColor: '#4E6A86', 
-    borderRadius: 30, 
+    backgroundColor: '#4E6A86',
+    borderRadius: 30,
     padding: 30,
     alignItems: 'center',
     justifyContent: 'center',
@@ -122,4 +230,10 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 15,
   },
+  errorText: {
+    color: '#FFD6D6',
+    marginTop: 10,
+    fontSize: 12,
+    textAlign: 'center'
+  }
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/context/AuthContext'; // Import the useAuth hook
 
 const ProfileButton = ({ icon, iconBgColor, text, onPress, isLogout = false }) => (
     <TouchableOpacity style={styles.row} onPress={onPress}>
@@ -16,18 +17,41 @@ const ProfileButton = ({ icon, iconBgColor, text, onPress, isLogout = false }) =
 
 export default function ProfileScreen() {
     const router = useRouter();
-    
+    const { user, logout } = useAuth(); // Get user data and logout function
+
     const handleLogout = () => {
         Alert.alert(
-            "Confirm Logout", 
-            "Are you sure you want to log out?", 
+            "Confirm Logout",
+            "Are you sure you want to log out?",
             [
                 { text: "Cancel", style: "cancel" },
-                { text: "Yes, Logout", onPress: () => router.replace('/') }
+                {
+                    text: "Yes, Logout",
+                    onPress: () => {
+                        logout();
+                        // After logging out, redirect to the very first screen of the app.
+                        // Using 'replace' prevents the user from going back to the profile screen.
+                        router.replace('/');
+                    }
+                }
             ]
         );
     };
-    
+
+    // Display a loading state or a fallback if user data is not yet available
+    if (!user) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Profile</Text>
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>Loading profile...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -38,42 +62,43 @@ export default function ProfileScreen() {
                 <View style={styles.profileSection}>
                     <Image source={require('../../assets/images/profile.jpg')} style={styles.profileImage} />
                     <View style={styles.profileTextContainer}>
-                        <Text style={styles.profileName}>Jameel Tutungan</Text>
-                        <Text style={styles.profileSubtitle}>jameel@example.com</Text>
+                        {/* Use dynamic data from the user object */}
+                        <Text style={styles.profileName}>{user.username}</Text>
+                        <Text style={styles.profileSubtitle}>{user.email}</Text>
                     </View>
                 </View>
 
                 <View style={styles.section}>
-                    <ProfileButton 
-                        icon="chatbubbles-outline" 
-                        iconBgColor="#34C759" 
-                        text="Chat with Staff" 
-                        onPress={() => router.push('/chat')} 
+                    <ProfileButton
+                        icon="chatbubbles-outline"
+                        iconBgColor="#34C759"
+                        text="Chat with Staff"
+                        onPress={() => router.push('/chat')}
                     />
-                    <ProfileButton 
-                        icon="map-outline" 
-                        iconBgColor="#5856D6" 
-                        text="Resort Map & Info" 
-                        onPress={() => router.push('/map')} 
+                    <ProfileButton
+                        icon="map-outline"
+                        iconBgColor="#5856D6"
+                        text="Resort Map & Info"
+                        onPress={() => router.push('/map')}
                     />
-                    <ProfileButton 
-                        icon="settings-outline" 
-                        iconBgColor="#8E8E93" 
-                        text="Settings" 
-                        onPress={() => router.push('/settings')} 
+                    <ProfileButton
+                        icon="settings-outline"
+                        iconBgColor="#8E8E93"
+                        text="Settings"
+                        onPress={() => router.push('/settings')}
                     />
                 </View>
 
                 <View style={styles.section}>
-                    <ProfileButton 
-                        icon="log-out-outline" 
-                        iconBgColor="#FF3B30" 
+                    <ProfileButton
+                        icon="log-out-outline"
+                        iconBgColor="#FF3B30"
                         text="Logout"
                         isLogout={true}
-                        onPress={handleLogout}
+                        onPress={handleLogout} // Use the new logout handler
                     />
                 </View>
-                
+
                 <Text style={styles.footerText}>App ver 1.0.0</Text>
             </ScrollView>
         </SafeAreaView>
@@ -81,20 +106,20 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
+    container: {
+        flex: 1,
         backgroundColor: '#F0F2F5'
     },
-    header: { 
+    header: {
         padding: 20,
         paddingBottom: 10,
     },
-    headerTitle: { 
-        fontSize: 28, 
-        fontWeight: 'bold' 
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold'
     },
-    content: { 
-        paddingHorizontal: 15 
+    content: {
+        paddingHorizontal: 15
     },
     profileSection: {
         flexDirection: 'row',

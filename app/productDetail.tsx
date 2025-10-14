@@ -1,8 +1,9 @@
 // app/productDetail.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFeatureFlags } from '@/context/FeatureFlagContext';
 
 // --- BAGONG LOGIC DITO ---
 // Ang "Master List" ng lahat ng produkto.
@@ -20,11 +21,14 @@ const allProducts = {
   'd2': { id: 'd2', name: 'Mango Shake', price: 180, image: require('../assets/images/mango-shake-removebg-preview.png'), description: "Sweet mango shake made with fresh mangoes." },
 };
 
-const RecommendedItem = ({ item }) => {
+const RecommendedItem = ({ item, disabled = false }) => {
     const router = useRouter();
     return (
-        // Ngayon, ipapasa na natin ang 'id' ng recommended item
-        <TouchableOpacity style={styles.recommendedItem} onPress={() => router.push({ pathname: '/productDetail', params: { id: item.id }})}>
+        <TouchableOpacity
+            style={styles.recommendedItem}
+            onPress={() => !disabled && router.push({ pathname: '/productDetail', params: { id: item.id }})}
+            disabled={disabled}
+        >
             <Image source={item.image} style={styles.recommendedImage} />
             <Text style={styles.recommendedName}>{item.name}</Text>
             <Text style={styles.recommendedPrice}>₱{item.price.toFixed(2)}</Text>
@@ -32,15 +36,33 @@ const RecommendedItem = ({ item }) => {
     );
 };
 
+const DisabledOverlay = () => (
+    <View style={styles.disabledOverlay}>
+        <Ionicons name="lock-closed-outline" size={48} color="rgba(0,0,0,0.6)" />
+        <Text style={styles.disabledText}>Food ordering is temporarily unavailable.</Text>
+    </View>
+);
+
 export default function ProductDetailScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [quantity, setQuantity] = useState(1);
-    
+    const { flags, isLoading } = useFeatureFlags();
+
+    const isFoodOrderingEnabled = flags?.food_ordering_enabled ?? false;
+
     // --- ITO ANG PINAKA-IMPORTANTENG FIX ---
     // Hanapin ang produkto sa ating "master list" gamit ang 'id' na galing sa params.
     const productId = params.id as string || '1'; // Default sa '1' kung walang naipasa
     const product = allProducts[productId];
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.centered}><ActivityIndicator size="large" color="#FF6B6B" /></View>
+            </SafeAreaView>
+        );
+    }
 
     if (!product) {
         return <SafeAreaView style={styles.container}><Text>Product not found!</Text></SafeAreaView>;
@@ -52,7 +74,9 @@ export default function ProductDetailScreen() {
                 <View style={styles.imageContainer}>
                     <Image source={product.image} style={styles.mainImage} />
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="black" /></TouchableOpacity>
-                    <TouchableOpacity style={styles.favButton}><Ionicons name="heart-outline" size={24} color="red" /></TouchableOpacity>
+                    <TouchableOpacity style={styles.favButton} disabled={!isFoodOrderingEnabled}>
+                        <Ionicons name="heart-outline" size={24} color={isFoodOrderingEnabled ? "red" : "#CCC"} />
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.detailsContainer}>
@@ -65,20 +89,27 @@ export default function ProductDetailScreen() {
 
                     <Text style={styles.sectionTitle}>Recommended sides</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <RecommendedItem item={allProducts['s1']} />
-                        <RecommendedItem item={allProducts['s2']} />
-                        <RecommendedItem item={allProducts['k2']} />
+                        <RecommendedItem item={allProducts['s1']} disabled={!isFoodOrderingEnabled} />
+                        <RecommendedItem item={allProducts['s2']} disabled={!isFoodOrderingEnabled} />
+                        <RecommendedItem item={allProducts['k2']} disabled={!isFoodOrderingEnabled} />
                     </ScrollView>
                 </View>
             </ScrollView>
             <View style={styles.footer}>
                 <View style={styles.quantitySelector}>
-                    <TouchableOpacity onPress={() => setQuantity(Math.max(1, quantity - 1))}><FontAwesome name="minus" size={20} color="black" /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isFoodOrderingEnabled}>
+                        <FontAwesome name="minus" size={20} color={isFoodOrderingEnabled ? "black" : "#CCC"} />
+                    </TouchableOpacity>
                     <Text style={styles.quantityText}>{quantity}</Text>
-                    <TouchableOpacity onPress={() => setQuantity(quantity + 1)}><FontAwesome name="plus" size={20} color="black" /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => setQuantity(quantity + 1)} disabled={!isFoodOrderingEnabled}>
+                        <FontAwesome name="plus" size={20} color={isFoodOrderingEnabled ? "black" : "#CCC"} />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.addToCartButton} onPress={() => router.push('/cart')}><Text style={styles.addToCartText}>Add to Cart</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.addToCartButton, !isFoodOrderingEnabled && styles.addToCartButtonDisabled]} onPress={() => router.push('/cart')} disabled={!isFoodOrderingEnabled}>
+                    <Text style={styles.addToCartText}>Add to Cart</Text>
+                </TouchableOpacity>
             </View>
+            {!isFoodOrderingEnabled && <DisabledOverlay />}
         </SafeAreaView>
     );
 }
@@ -93,5 +124,21 @@ const styles = StyleSheet.create({
     footer: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#F0F0F0', alignItems: 'center', backgroundColor: 'white' },
     quantitySelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F2F5', borderRadius: 30, padding: 10, paddingHorizontal: 20 },
     quantityText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 20 }, addToCartButton: { flex: 1, backgroundColor: '#FF6B6B', padding: 20, borderRadius: 30, alignItems: 'center', marginLeft: 15 },
+    addToCartButtonDisabled: { backgroundColor: '#D3D3D3' },
     addToCartText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    disabledOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+      },
+      disabledText: {
+        marginTop: 16,
+        fontSize: 18,
+        fontWeight: '600',
+        color: 'rgba(0,0,0,0.7)',
+        textAlign: 'center',
+      },
 });

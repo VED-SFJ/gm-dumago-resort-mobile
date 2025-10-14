@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { useFeatureFlags } from '@/context/FeatureFlagContext';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const activities = [
   { id: '1', name: 'Swimming Pool', description: 'Enjoy our main pool, open from 8 AM to 10 PM.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
@@ -14,8 +15,8 @@ const activities = [
   { id: '6', name: 'Kids Club', description: 'Fun activities for children of all ages.', image: require('../assets/images/516301867_1162325265912740_158239957098605253_n.jpg') },
 ];
 
-const ActivityItem = ({ item, isLarge = false, onPress }) => (
-  <TouchableOpacity onPress={() => onPress(item)} style={[styles.activityItem, isLarge ? styles.largeActivityItem : {}]}>
+const ActivityItem = ({ item, isLarge = false, onPress, disabled = false }) => (
+  <TouchableOpacity onPress={() => onPress(item)} style={[styles.activityItem, isLarge ? styles.largeActivityItem : {}]} disabled={disabled}>
     <Image source={item.image} style={styles.itemImage} />
     <View style={styles.itemOverlay}>
       <Text style={styles.itemName}>{item.name}</Text>
@@ -24,19 +25,39 @@ const ActivityItem = ({ item, isLarge = false, onPress }) => (
   </TouchableOpacity>
 );
 
+const DisabledOverlay = () => (
+    <View style={styles.disabledOverlay}>
+        <Ionicons name="lock-closed-outline" size={48} color="rgba(0,0,0,0.6)" />
+        <Text style={styles.disabledText}>Activities are temporarily unavailable.</Text>
+        <Text style={styles.disabledSubText}>Please check back later.</Text>
+    </View>
+);
+
 export default function ActivitiesScreen() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const { flags, isLoading } = useFeatureFlags();
+
+  const isFeatureEnabled = flags?.food_ordering_enabled ?? false;
 
   const handleImageClick = (activity) => {
-    setSelectedActivity(activity);
-    setModalVisible(true);
+    if (isFeatureEnabled) {
+      setSelectedActivity(activity);
+      setModalVisible(true);
+    }
   };
+
+  if (isLoading) {
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.centered}><ActivityIndicator size="large" /></View>
+        </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* This JSX structure is unchanged, exactly as you provided it. */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={28} color="#000" />
@@ -48,7 +69,7 @@ export default function ActivitiesScreen() {
       <Text style={styles.sectionTitle}>Popular Activities</Text>
       <FlatList
         data={activities.slice(0, 3)}
-        renderItem={({ item }) => <ActivityItem item={item} isLarge={true} onPress={handleImageClick} />}
+        renderItem={({ item }) => <ActivityItem item={item} isLarge={true} onPress={handleImageClick} disabled={!isFeatureEnabled} />}
         keyExtractor={item => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -58,11 +79,13 @@ export default function ActivitiesScreen() {
       <Text style={styles.sectionTitle}>All Activities</Text>
       <FlatList
         data={activities}
-        renderItem={({ item }) => <ActivityItem item={item} onPress={handleImageClick} />}
+        renderItem={({ item }) => <ActivityItem item={item} onPress={handleImageClick} disabled={!isFeatureEnabled} />}
         keyExtractor={item => item.id}
         numColumns={2}
         contentContainerStyle={styles.allActivitiesGrid}
       />
+
+      {!isFeatureEnabled && <DisabledOverlay />}
 
       <Modal
         animationType="fade"
@@ -95,10 +118,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', 
+    justifyContent: 'center',
     paddingVertical: 15,
     paddingHorizontal: 15,
     backgroundColor: '#fff',
@@ -108,7 +136,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    left: 15, 
+    left: 15,
     zIndex: 1,
   },
   headerTitle: {
@@ -221,4 +249,24 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
+  disabledOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 248, 248, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  disabledText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'rgba(0,0,0,0.7)',
+    textAlign: 'center',
+  },
+  disabledSubText: {
+      marginTop: 4,
+      fontSize: 14,
+      color: 'rgba(0,0,0,0.5)',
+      textAlign: 'center',
+  }
 });
